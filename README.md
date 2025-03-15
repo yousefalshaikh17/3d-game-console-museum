@@ -39,3 +39,7 @@ This project allowed me to gain valuable experience in VR development using Unit
 
 *Different LOD models for the console pedestals.*
 
+### Challenges & Learnings
+
+This project was fairly straightforward. One of the main challenges was configuring Level-of-Detail (LOD) models to balance between performance and fidelity. This was resolved through thoroughly inspecting each model and balancing the triangle count. Another challenge was making sure that memory fragmentation is prevented. This taught me to properly make use of debuggers to track down performance issues.
+
