@@ -1,0 +1,8 @@
+
+.vscode
+
+# Added for build workflow
+build/
+*.zip
+/3DGameConsoleMuseum/Assets/Editor/
+/3DGameConsoleMuseum/Assets/Editor.meta

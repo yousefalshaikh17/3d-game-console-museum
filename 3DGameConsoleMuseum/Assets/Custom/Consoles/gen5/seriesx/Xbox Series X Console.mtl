@@ -1,0 +1,27 @@
+newmtl Bengal_66d130a7-46cc-42d2-a1cb-37dfc47fe932
+Kd 0.361 0.361 0.369
+d 1.000
+newmtl aiStandardSurface2_5e162e9a-96f8-4f83-bc6f-ed0d619bfa68
+Kd 0.529 0.529 0.529
+d 1.000
+newmtl Bengal 1_11ebce9b-c515-4fb2-91ed-5f742809b1ed
+Kd 0.000 0.000 0.000
+d 1.000
+newmtl Subsurface Textured_260099c9-583b-4da7-9b9c-f4e83f13c4e8
+Kd 0.000 0.000 0.000
+d 1.000
+newmtl Secret Path_8b1ed484-fe89-4eec-b17e-b25b0a92b1eb
+Kd 1.000 1.000 1.000
+d 1.000
+map_Kd pngwing&pngwing.png
+newmtl Cool Touch_8bc3f277-4bff-4c86-ba77-8e66b0405750
+Kd 1.000 1.000 1.000
+d 1.000
+map_Kd hhargreaves_201102_ecl1040_xbox_detail_26032.jpg
+newmtl Plastic Textured_bfec4463-971a-434a-9a88-1d3524d80ed5
+Kd 0.090 0.090 0.090
+d 1.000
+newmtl Uranus_2e4f971e-e86c-495e-b6f8-e1061deb4527
+Kd 1.000 1.000 1.000
+d 1.000
+map_Kd 2f259a9a-b930-4ba9-b867-3c7871c57ce6&2f259a9a-b930-4ba9-b867-3c7871c57ce6.png
