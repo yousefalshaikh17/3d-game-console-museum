@@ -1,0 +1,5 @@
+# Mark everything as vendored (ignored for language stats)
+* linguist-vendored
+
+# Include only the files in 3DGameConsoleMuseum/Assets/Scripts directory for language stats
+3DGameConsoleMuseum/Assets/Scripts/* linguist-vendored=false
