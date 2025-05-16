@@ -2,21 +2,92 @@ name: Unity Build and Release for Windows & Linux
 
 on:
   push:
-    tags:
-      - 'v*'  # Trigger when a version tag is pushed
-
+    branches:
+      - main
+  pull_request:
 
 env:
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
   UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
   UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-
+  UNITY_VERSION: auto
+  PROJECT_PATH: ./3DGameConsoleMuseum
+  BUILD_NAME: 3DGameConsoleMuseum
+  
 jobs:
-  build-game:
+  run-tests: # Runs tests if possible (This should also preload the library)
+    name: Run Tests (${{ matrix.testMode }})
     runs-on: ubuntu-latest
-
+    outputs:
+      latest_commit: ${{ steps.get_commit.outputs.latest_commit }}
+    strategy:
+      matrix:
+        testMode:
+          - PlayMode
+          - EditMode
     steps:
+      # Free up space
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          sudo apt-get clean
 
+      # Checkout
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      # Get latest commit hash
+      - name: Get latest commit hash for game files
+        id: get_commit
+        run: |
+          echo "latest_commit=$(git log -n 1 --pretty=format:%h -- ${{ env.PROJECT_PATH }})" >> $GITHUB_OUTPUT
+
+      # Cache Unity Library
+      - name: Cache Unity Library folder
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PROJECT_PATH }}/Library  # Cache Unity Library folder
+          key: ${{ runner.os }}-unity-${{ steps.get_commit.outputs.latest_commit }}
+          restore-keys: |
+            ${{ runner.os }}-unity
+
+      # Run Unity tests
+      - name: Test Unity project
+        id: tests
+        uses: game-ci/unity-test-runner@v4.3.1
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          testMode: ${{ matrix.testMode }}
+          checkName: ${{ matrix.testMode }} Test Results
+
+      # Upload test results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.testMode }} Test Results
+          path: ${{ steps.tests.outputs.artifactsPath }}
+
+  build-game:
+    name: Build Game (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    needs: run-tests
+    strategy:
+      matrix:
+        include:
+          - name: Linux
+            targetPlatform: StandaloneLinux64
+            zipPostfix: -linux64.zip
+            artifactName: linux-build
+
+          - name: Windows
+            targetPlatform: StandaloneWindows64
+            zipPostfix: -windows64.zip
+            artifactName: windows-build
+    steps:
       # Free up space
       - name: Free up disk space
         run: |
@@ -24,55 +95,64 @@ jobs:
           sudo apt-get clean
           df -h  # Show available space after cleanup
 
-
       # Checkout
       - name: Checkout code
         uses: actions/checkout@v3
-
 
       # Cache Unity Library
       - name: Cache Unity Library folder
         uses: actions/cache@v3
         with:
-          path: ./3DGameConsoleMuseum/Library  # Cache Unity Library folder
-          key: ${{ runner.os }}-unity-${{ hashFiles('**/Packages/manifest.json') }}  # Cache key based on project dependencies
-          restore-keys: |
-            ${{ runner.os }}-unity
+          path: ${{ env.PROJECT_PATH }}/Library  # Cache Unity Library folder
+          key: ${{ runner.os }}-unity-${{ needs.run-tests.outputs.latest_commit }}
 
-      # Prepare Linux build
-      - name: Create Linux Build
+      # Build the game project
+      - name: Create ${{ matrix.name }} Build
+        id: build
         uses: game-ci/unity-builder@v4.3.0
         with:
-          unityVersion: 2021.3.5f1
-          targetPlatform: StandaloneLinux64
-          projectPath: ./3DGameConsoleMuseum
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: ${{ matrix.targetPlatform }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          buildName: ${{ env.BUILD_NAME }}
+          buildsPath: .
 
-      # Archive the Linux Build
-      - name: Archive Linux Build
+      # Archive the Build
+      - name: Archive ${{ matrix.name }} Build
         run: |
-          zip -r 3DGameConsoleMuseum-linux64.zip build/StandaloneLinux64
+          sudo zip -r ${{ env.BUILD_NAME }}${{ matrix.zipPostfix }} ${{ matrix.targetPlatform }}
 
-      # Reset repo
-      - name: Reset uncommitted changes
-        run: |
-          git reset --hard
-
-      # Prepare Windows build
-      - name: Create Windows Build
-        uses: game-ci/unity-builder@v4.3.0
+      # Upload build artifact
+      - name: Upload ${{ matrix.name }} build artifact
+        uses: actions/upload-artifact@v4
         with:
-          unityVersion: 2021.3.5f1
-          targetPlatform: StandaloneWindows64
-          projectPath: ./3DGameConsoleMuseum
-      
-      # Archive the Windows Build
-      - name: Archive Windows Build
-        run: |
-          zip -r 3DGameConsoleMuseum-windows64.zip build/StandaloneWindows64
+          name: ${{ matrix.artifactName }}
+          path: ${{ matrix.zipPostfix }}
+          retention-days: 30
 
-      
 
-      # Create a GitHub Release and Upload the Windows Build
+
+  release-game: # Release the game if a tag is pushed
+    name: Release Game
+    needs: build-game
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      # Fetch Linux build artifact
+      - name: Download Linux build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: ./
+
+      # Fetch Windows build artifact
+      - name: Download Windows build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: ./
+
+      # Create release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -80,8 +160,8 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "Release ${{ github.ref_name }}"
           body: "Executables for Windows and Linux can be found below. :)"
-          draft: false
+          draft: true
           prerelease: false
           files: |
-            3DGameConsoleMuseum-windows64.zip
-            3DGameConsoleMuseum-linux64.zip
+            ${{ env.BUILD_NAME }}-linux64.zip
+            ${{ env.BUILD_NAME }}-windows64.zip
