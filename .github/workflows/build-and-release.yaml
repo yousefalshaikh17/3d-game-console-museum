@@ -8,7 +8,11 @@ on:
       - '*'
     paths-ignore:
       - '**/*.md'
+  
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+
 
 env:
   UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
@@ -123,6 +127,7 @@ jobs:
 
       # Archive the Build
       - name: Archive ${{ matrix.name }} Build
+        id: archive
         run: |
           sudo zip -r ${{ env.BUILD_NAME }}${{ matrix.zipPostfix }} ${{ matrix.targetPlatform }}
 
@@ -131,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifactName }}
-          path: ${{ matrix.zipPostfix }}
+          path: ${{ env.BUILD_NAME }}${{ matrix.zipPostfix }}
           retention-days: 30
 
 
