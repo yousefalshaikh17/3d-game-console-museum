@@ -51,7 +51,7 @@ To download the latest build for the game, download it from the [releases page](
 
 1. Clone or fork the repository. Clone command:
 ```
-git clone https://github.com/yousefalshaikh17/x-marks-the-spot.git
+git clone https://github.com/yousefalshaikh17/3d-game-console-museum.git
 ```
 2. Open Unity Hub and load the project. **It is recommended to use Unity 6000.1.3f1.**
 3. Unity will load all essential assets. Afterwards, you are able to modify the project or make a build yourself.
