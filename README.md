@@ -60,7 +60,7 @@ git clone https://github.com/yousefalshaikh17/x-marks-the-spot.git
 
 There are two ways to control the player:
 - Using a Google VR headset (Recommended)
-- Holding down alt to simulate VR movement
+- Holding down alt to simulate VR movement (Editor Only)
 
 ## Challenges & Learnings
 
